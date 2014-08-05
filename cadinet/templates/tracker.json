@@ -1,0 +1,15 @@
+{
+   "version":0.0,
+   "id" : "{{ config.TRACKER_UUID }}",
+   "url" : "{{ config.TRACKER_URL }}\tracker",
+   "thingsCount" : {{ things|length }},
+   "trackersCount" : 0,
+   "trackersTraversalDepth" : 0,
+   "maintainers" : [
+      {
+         "url" :  "{{ config.MAINTAINER_EMAIL }}",
+         "name" : "{{ config.MAINTAINER_NAME }}"
+      }
+   ],
+   "things": {{ things| tojson }}
+}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<div class="row">
+		<div class="col-md-6 col-xs-12">
+			<h1>About</h1>
+			<label>What is CADinet?</label>
+
+			<p>CADinet is a web application that allows to upload 3D models via a REST API for
+publishing on the web and in the <a href="https://thingtracker.net">thingtracker network</a>. It is written in
+			<a href="http://python.org">python</a>, using <a href="http://flask.pocoo.org/">flask</a> and
+			<a href="http://www.mongodb.org/">MongoDB</a>, with easy deployment on
+			<a href="https://www.openshift.com/">OpenShift</a> in mind. The frontend is based on
+			<a href="http://getbootstrap.com/">bootstrap</a>.</p>
+
+			<p>It is licensed under the <a href="http://www.gnu.org/licenses/agpl.html">AGPL3</a>.</p>
+		</div>
+		<div class="col-md-6 col-xs-12">
+			<h1>Contribute</h1>
+			<label>How can I help?</label>
+			
+			<p>You can help by <a href="https://github.com/jreinhardt/cadinet">running your own cadinet</a>, <a href="https://github.com/jreinhardt/cadinet">or hacking the source</a>.</p>
+
+		</div>
+	</div>
+
+
+{% endblock %}

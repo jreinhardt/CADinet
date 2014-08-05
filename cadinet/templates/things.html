@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<h1>Things</h1>
+	<label>Things that are available in this cadinet</label>
+	<table class="table table-striped table-bordered">
+		<tbody>
+		{% for thing in things %}
+			<tr><td><a href="{{ url_for('show_thing',id=thing._id) }}">{{ thing.title }}</a></td></tr>
+		{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}

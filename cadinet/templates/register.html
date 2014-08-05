@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<h1>Request Token</h1>
+	<label>Obtain a secret token by logging in with your OpenID</label>
+	<div class="form-group has-error">
+		<form method="POST" action="/register">
+			{{ form.csrf_token }}
+			{{ form.url(size=20) }}
+			<input type="submit" class="btn btn-primary" value="Go">
+		</form>
+	</div>
+{% endblock %}

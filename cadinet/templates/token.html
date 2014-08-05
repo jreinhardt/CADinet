@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+	{% if action == 'created' %}
+	<h1>Secret Token created</h1>
+	<label>Put this token into your config to make sure only you can upload stuff</label>
+	{% elif action == 'updated' %}
+	<h1>Secret Token updated</h1>
+	<label>Previously obtained tokens are invalidated. Put this token into your config to make sure only you can upload stuff</label>
+	{% endif %}
+	<div class="inner-content">
+		<p>{{ token }}</p>
+	</div>
+{% endblock %}

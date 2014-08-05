@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CADinet</title>
+		<link href="/static/bootstrap.min.css" rel="stylesheet">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+		<script src="/static/jquery-2.1.1.min.js"></script>
+		<script src="/static/bootstrap.min.js"></script>
+		{% block tracking %}
+		{% if config.PIWIK_URL is defined and config.PIWIK_ID is defined %}
+			<script type="text/javascript">
+				var _paq = _paq || [];
+					_paq.push(['trackPageView']);
+				_paq.push(['enableLinkTracking']);
+					(function() {
+					 var u=(("https:" == document.location.protocol) ? "https" : "http") + "://{{ config.PIWIK_URL }}/";
+					 _paq.push(['setTrackerUrl', u+'piwik.php']);
+					 _paq.push(['setSiteId', {{ config.PIWIK_ID }}]);
+					 var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.type='text/javascript';
+					 g.defer=true; g.async=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+				 })();
+			</script>
+			<noscript><p><img src="http://{{ config.PIWIK_URL }}/piwik.php?idsite={{ config.PIWIK_ID }}" style="border:0;" alt="" /></p></noscript>
+		{% endif %}
+		{% endblock %}
+		<style>
+			html {
+				position: relative;
+				min-height: 100%;
+			}
+			body {
+				/* Margin bottom by footer height */
+				margin-bottom: 60px;
+				margin-top: 60px;
+			}
+			.footer {
+				position: absolute;
+				bottom: 0;
+				width: 100%;
+				/* Set the fixed height of the footer here */
+				height: 60px;
+			}
+		</style>
+	</head>
+
+	<body>
+		{% block navbar %}
+		 <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="/about">CADinet</a>
+				</div>
+				<div class="collapse navbar-collapse">
+					<ul class="nav navbar-nav">
+						<li><a href="{{ url_for('register') }}">Register</a></li>
+						<li><a href="{{ url_for('list_things') }}">Things</a></li>
+					</ul>
+				</div><!--/.nav-collapse -->
+			</div>
+		</div>
+		{% endblock %}
+		<div class="container">
+		{% block content %}Content{% endblock %}
+		</div>
+
+		<div class="footer">
+			<div class="container">
+				<p class="text-muted">Copyright 2014 by Johannes Reinhardt, licensed under <a href="http://www.gnu.org/licenses/agpl.html">APGL3</a>,<a href="http://github.com/jreinhardt/thingcollector">Source</p>
+			</div>
+		</div>
+	</body>
+</html>

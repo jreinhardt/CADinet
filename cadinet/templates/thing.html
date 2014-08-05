@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<div class="row">
+		{% if thing is none %}
+				<h1>No thing with this id found</h1>
+		{% else %}
+			<div class="col-md-8 col-xs-12">
+				<h1>{{ thing.title }}</h1>
+
+				{% if not thing['3djs_file'] is undefined %}
+				<h2>3D View</h2>
+				<div id="threedview" style="border: 1px solid black"></div>
+				<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r50/three.min.js"></script>
+				<script type="text/javascript" src="{{ url_for('download_3djs',id=thing._id) }}"></script>
+				<script type="text/javascript"> window.onload = function() {
+					attach_renderer(document.getElementById("threedview"));
+				}
+				</script>
+				{% endif %}
+
+				<h2>Description</h2>
+
+				{{ thing.description }}
+			</div>
+			<div class="col-md-4 col-xs-12">
+				<h3>Author</h1>
+				{{ thing.author }}
+
+				<h3>License</h1>
+				<a href="{{ thing.license_url }}">{{ thing.license }}</a>
+
+				<h3>Download</h1>
+				{% if thing.fcstd_file is undefined %}
+					<p>No download provided</p>
+				{% else %}
+				<a href="{{ url_for('download_fcstd',id=thing._id) }}">{{ thing.fcstd_file }}</a>
+				{% endif %}
+			</div>
+		{% endif %}
+	</div>
+{% endblock %}
