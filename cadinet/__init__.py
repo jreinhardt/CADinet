@@ -44,15 +44,15 @@ if not exists(oid_path):
     mkdir(oid_path)
 oid = OpenID(app, oid_path,safe_roots=[])
 
-#log_handler = RotatingFileHandler(join(environ['OPENSHIFT_LOG_DIR'],'cadinet.log'),maxBytes=2**20,backupCount=3)
-#log_handler.setLevel(logging.INFO)
-#log_handler.setFormatter(logging.Formatter(
-#    '%(asctime)s %(levelname)s: %(message)s '
-#    '[in %(pathname)s:%(lineno)d]'
-#))
-#
-#app.logger.addHandler(log_handler)
-#logging.getLogger().addHandler(log_handler)
+log_handler = RotatingFileHandler(join(environ['OPENSHIFT_LOG_DIR'],'cadinet.log'),maxBytes=2**20,backupCount=3)
+log_handler.setLevel(logging.INFO)
+log_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s '
+    '[in %(pathname)s:%(lineno)d]'
+))
+
+app.logger.addHandler(log_handler)
+logging.getLogger().addHandler(log_handler)
 
 class OpenIDForm(Form):
     url = TextField("url",validators=[DataRequired(),URL(require_tld=True)])
