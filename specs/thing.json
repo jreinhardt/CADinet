@@ -1,0 +1,23 @@
+{
+   "$schema":"http://json-schema.org/draft-04/schema#",
+   "title" : "Thing data upload",
+   "type":"object",
+   "properties" : {
+      "token" : {"type" : "string"},
+      "thing" : {
+         "type" : "object",
+         "properties" : {
+            "id" : {"type" : "string"},
+            "title" : {"type" : "string"},
+            "description" : {"type" : "string"},
+            "license" : {"type" : "string"},
+            "license_url" : {"type" : "string"}
+         },
+         "additionalProperties" : false,
+         "required" : ["id","title","description","license","license_url"]
+      }
+   },
+   "additionalProperties" : false,
+   "required" : ["token", "thing"]
+}
+

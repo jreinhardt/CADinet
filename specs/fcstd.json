@@ -1,0 +1,11 @@
+{
+   "$schema":"http://json-schema.org/draft-04/schema#",
+   "title" : "FCStd File upload",
+   "type":"object",
+   "properties" : {
+      "token" : {"type" : "string"}
+   },
+   "additionalProperties" : false,
+   "required" : ["token"]
+}
+

@@ -23,6 +23,9 @@ from werkzeug import secure_filename
 
 from urlparse import urljoin
 
+import json
+from jsonschema import validate, ValidationError, SchemaError
+
 from os import environ, mkdir, makedirs
 from os.path import exists,join
 from shutil import rmtree
@@ -124,7 +127,18 @@ def upload_fcstd(id):
     thing = mongo.db.things.find_one({"_id" : id})
     if thing is None:
         abort(404)
-    #TODO: authenticate upload
+
+    req = request.get_json()
+    try:
+        schema = json.loads(open(join(environ["OPENSHIFT_REPO_DIR"],'specs','fcstd.json')).read())
+        validate(req,schema)
+    except SchemaError as e:
+        app.logger.error("SchemaError: " + e.message)
+        return jsonify(status="fail",message="Invalid schema. This is not your fault, please report a bug"), 400
+    except ValidationError as e:
+        app.logger.error("ValidationError: " + e.message)
+        return jsonify(status="fail",message=e.message), 400
+
     res = {}
     file = request.files['file']
     if file and allowed_file('fcstd',file.filename):
@@ -156,39 +170,20 @@ def upload_3djs(id):
     if not req:
         return jsonify(status="fail",message="There was a problem with the request"),400
 
+    try:
+        schema = json.loads(open(join(environ["OPENSHIFT_REPO_DIR"],'specs','threed.json')).read())
+        validate(req,schema)
+    except SchemaError as e:
+        app.logger.error("SchemaError: " + e.message)
+        return jsonify(status="fail",message="Invalid schema. This is not your fault, please report a bug"), 400
+    except ValidationError as e:
+        app.logger.error("ValidationError: " + e.message)
+        return jsonify(status="fail",message=e.message), 400
+
     users = mongo.db.users
-    if "token" in req:
-        user = users.find_one({"token" : req["token"]})
-        if user is None:
-            return jsonify(status="fail",message="Authentication failed"),403
-    else:
-        return jsonify(status="fail",message="No authentication token given"),403
-
-    if not ("vertices" in req and "facets" in req and "camera" in req):
-        return jsonify(status="fail",message="No 3D data supplied"),400
-
-    #check data TODO jsonschema
-    #TODO camera
-    if not isinstance(req["vertices"],list):
-        return jsonify(status="fail",message="Invalid vertices list"),400
-    for v in req["vertices"]:
-        if not isinstance(v,list):
-            return jsonify(status="fail",message="Invalid vertex coordinates"),400
-        if not len(v) == 3:
-            return jsonify(status="fail",message="Invalid vertex coordinates"),400
-        for c in range(3):
-            if not isinstance(v[c],float):
-                return jsonify(status="fail",message="Invalid vertex coordinates"),400
-    if not isinstance(req["facets"],list):
-        return jsonify(status="fail",message="Invalid facets list"),400
-    for f in req["facets"]:
-        if not isinstance(f,list):
-            return jsonify(status="fail",message="Invalid facets"),400
-        if not len(f) == 3:
-            return jsonify(status="fail",message="Invalid facets"),400
-        for i in range(3):
-            if not isinstance(f[i],int):
-                return jsonify(status="fail",message="Invalid facets"),400
+    user = users.find_one({"token" : req["token"]})
+    if user is None:
+        return jsonify(status="fail",message="Authentication failed"),403
 
     threed_dir = join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3djs')
     if not exists(threed_dir):
@@ -224,37 +219,34 @@ def is_valid_uuid(uid):
 def add_thing():
     req = request.get_json()
     if not req:
-        print "Bad request"
-        abort(400)
+        return jsonify(status="fail", message="Failed to decode request"),400
+
+    try:
+        schema = json.loads(open(join(environ["OPENSHIFT_REPO_DIR"],'specs','thing.json')).read())
+        validate(req,schema)
+    except SchemaError as e:
+        app.logger.error("SchemaError: " + e.message)
+        return jsonify(status="fail",message="Invalid schema. This is not your fault, please report a bug"), 400
+    except ValidationError as e:
+        app.logger.error("ValidationError: " + e.message)
+        return jsonify(status="fail",message=e.message), 400
 
     users = mongo.db.users
-    if "token" in req:
-        user = users.find_one({"token" : req["token"]})
-        if user is None:
-            print "Authentication failed"
-            abort(403)
+    user = users.find_one({"token" : req["token"]})
+    if user is None:
+        return jsonify(status="fail", message="Authentication failed"),403
+
+
+    thing = {}
+
+    if is_valid_uuid(req['thing']['id']):
+        thing['_id'] = req["thing"]["id"]
     else:
-        print "Authentication failed"
-        abort(403)
-
-    if not "thing" in req:
-        print "No thing supplied"
-        abort(400)
-
-    #TODO make sure only owner can overwrite things
+        return jsonify(status="fail",message="Invalid thing id"),400
 
     #sanitize thing TODO bleach
-    thing = {}
-    for key in ['id', 'title','description','license','license_url']:
-        if not key in req["thing"]:
-            abort(400)
-        if key == 'id':
-            if is_valid_uuid(req['thing']['id']):
-                thing['_id'] = req["thing"]["id"]
-            else:
-                abort(400)
-        else:
-            thing[key] = req["thing"][key]
+    for key in ['title','description','license','license_url']:
+        thing[key] = req["thing"][key]
     thing['author'] = user['name']
 
     resp = {}
@@ -262,12 +254,17 @@ def add_thing():
     resp['3djs_url'] = urljoin(request.url,url_for('upload_3djs',id=req['thing']['id']))
 
     things = mongo.db.things
-    if things.find_one({'_id' : thing['_id']}) is None:
+    thing_ex = things.find_one({'_id' : thing['_id']})
+    if thing_ex is None:
         things.insert(thing)
-        resp['action'] = "created"
+        resp["status"] = "created"
     else:
+        #make sure only owner can overwrite things
+        if thing_ex["author"] != user["name"]:
+            return jsonify(status="fail", message="Authentication failed"),403
+
         things.update({'_id' : thing['_id']},thing)
-        resp['action'] = "updated"
+        resp["status"] = "created"
 
     return jsonify(**resp)
 
