@@ -102,11 +102,6 @@ def provide_token(resp):
     else:
         redirect(url_for('register'))
 
-@app.route('/clear')
-def clear():
-    mongo.db.things.remove()
-    return "cleared"
-
 @app.route('/thing/<id>')
 def show_thing(id):
     things = mongo.db.things
