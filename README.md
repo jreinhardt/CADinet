@@ -71,6 +71,10 @@ get analytics enabled on the cadinet by specifying
     PIWIK_URL = "the url of your piwik instance without leading http(s)://"
     PIWIK_ID = "the site id of the thingcollector assigned in your piwik"
 
+If you want to disable the possibility to register new users, add
+
+    ENABLE_REGISTRATION = False
+
 Test the app
 ------------
 

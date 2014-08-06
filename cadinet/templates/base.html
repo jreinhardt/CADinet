@@ -59,7 +59,9 @@
 				</div>
 				<div class="collapse navbar-collapse">
 					<ul class="nav navbar-nav">
+						{% if config.ENABLE_REGISTRATION %}
 						<li><a href="{{ url_for('register') }}">Register</a></li>
+						{% endif %}
 						<li><a href="{{ url_for('list_things') }}">Things</a></li>
 					</ul>
 				</div><!--/.nav-collapse -->

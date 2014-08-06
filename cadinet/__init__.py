@@ -37,6 +37,7 @@ import random
 import re
 
 app = Flask(__name__)
+app.config['ENABLE_REGISTRATION'] = True
 app.config.from_pyfile(join(environ['OPENSHIFT_REPO_DIR'],'mongo.cfg'))
 app.config.from_pyfile(join(environ['OPENSHIFT_DATA_DIR'],'cadinet.cfg'))
 
@@ -78,6 +79,8 @@ def about():
 @app.route('/register',methods=['GET','POST'])
 @oid.loginhandler
 def register():
+    if not config['ENABLE_REGISTRATION']:
+        abort(404)
     form = OpenIDForm()
     if form.validate_on_submit():
         openid = form.url.data
