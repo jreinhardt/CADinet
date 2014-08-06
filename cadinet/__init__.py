@@ -120,7 +120,7 @@ def list_things():
 
 def allowed_file(exts,filename):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1] in exts
+           filename.rsplit('.', 1)[1].lower() in exts
 
 @app.route('/upload/fcstd/<id>',methods=['POST'])
 def upload_fcstd(id):
