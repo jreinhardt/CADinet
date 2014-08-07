@@ -36,6 +36,21 @@ from logging.handlers import RotatingFileHandler
 import random
 import re
 
+LICENSES = {
+    "CC0 1.0" : "http://creativecommons.org/publicdomain/zero/1.0/",
+    "CC-BY 3.0" : "http://creativecommons.org/licenses/by/3.0/",
+    "MIT" : "http://opensource.org/licenses/MIT", #see https://fedoraproject.org/wiki/Licensing:MIT?rd=Licensing/MIT
+    "BSD 3-clause" : "http://opensource.org/licenses/BSD-3-Clause",
+    "Apache 2.0" : "http://www.apache.org/licenses/LICENSE-2.0",
+    "LGPL 2.1" : "http://www.gnu.org/licenses/lgpl-2.1",
+    "LGPL 2.1+" : "http://www.gnu.org/licenses/lgpl-2.1",
+    "LGPL 3.0" : "http://www.gnu.org/licenses/lgpl-3.0",
+    "LGPL 3.0+" : "http://www.gnu.org/licenses/lgpl-3.0",
+    "GPL 2.0+" : "http://www.gnu.org/licenses/gpl-2.0",
+    "GPL 3.0" : "http://www.gnu.org/licenses/gpl-3.0",
+    "GPL 3.0+" : "http://www.gnu.org/licenses/gpl-3.0",
+}
+
 app = Flask(__name__)
 app.config['ENABLE_REGISTRATION'] = True
 app.config.from_pyfile(join(environ['OPENSHIFT_REPO_DIR'],'mongo.cfg'))
@@ -74,7 +89,7 @@ def home():
 
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    return render_template('about.html',licenses = LICENSES.items())
 
 @app.route('/register',methods=['GET','POST'])
 @oid.loginhandler
@@ -211,9 +226,6 @@ def download_3djs(id):
     return send_file(join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3djs',thing['3djs_file']),mimetype='text/javascript')
 
 
-
-
-
 uuid_re = re.compile('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 def is_valid_uuid(uid):
     return not uuid_re.match(uid) is None
@@ -239,7 +251,6 @@ def add_thing():
     if user is None:
         return jsonify(status="fail", message="Authentication failed"),403
 
-
     thing = {}
 
     if is_valid_uuid(req['thing']['id']):
@@ -251,6 +262,9 @@ def add_thing():
     for key in ['title','description','license','license_url']:
         thing[key] = req["thing"][key]
     thing['author'] = user['name']
+
+    if not thing['license'] in LICENSES or LICENSES[thing['license']] != thing['license_url']:
+        return jsonify(status="fail",message="License not allowed or unknown license url, see %s for more information" % url_for('about'))
 
     resp = {}
     resp['fcstd_url'] = urljoin(request.url,url_for('upload_fcstd',id=req['thing']['id']))

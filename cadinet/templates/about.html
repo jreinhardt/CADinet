@@ -22,6 +22,22 @@ publishing on the web and in the <a href="https://thingtracker.net">thingtracker
 			<p>You can help by <a href="https://github.com/jreinhardt/cadinet">running your own cadinet</a>, <a href="https://github.com/jreinhardt/cadinet">or hacking the source</a>.</p>
 
 		</div>
+		<div class="col-md-6 col-xs-12">
+			<h1>Accepted Licenses</h1>
+			<label>Only files licensed under relatively permissive licenses are allowed</label>
+
+			<p>Cadinet only accepts files under certain licenses to avoid legal
+			complications with hosting and providing these files. A list of
+			these licenses linked to more detailed informations is shown
+			below.</p>
+
+			<table class="table table-striped table-bordered">
+				{% for license,license_url in licenses %}
+				<tr><th>{{ license }}</th><td><a href="{{ license_url }}">{{ license_url }}</td></tr>
+				{% endfor %}
+			</table>
+
+		</div>
 	</div>
 
 
