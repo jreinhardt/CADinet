@@ -284,6 +284,19 @@ def tracker():
         })
     return render_template("tracker.json",things=things)
 
+@app.route('/tracker/<user>')
+def tracker_user(user):
+    things = []
+    for t in mongo.db.things.find({'author' : user}):
+        things.append({
+            "id" : t["_id"],
+            "url" : urljoin(request.url,url_for('show_thing',id=t["_id"])),
+            "title" : t["title"],
+            "authors" : [{"name" : t["author"]}],
+            "description" : t["description"]
+        })
+    return render_template("tracker.json",things=things)
+
 if __name__ == '__main__':
 
     app.run()
