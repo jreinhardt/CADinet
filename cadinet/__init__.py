@@ -26,7 +26,7 @@ from urlparse import urljoin
 import json
 import jsonschema
 
-from os import environ, mkdir, makedirs
+from os import environ, mkdir, makedirs, getenv
 from os.path import exists,join
 from shutil import rmtree
 import os.path
@@ -54,7 +54,13 @@ LICENSES = {
 
 app = Flask(__name__)
 app.config['ENABLE_REGISTRATION'] = True
-app.config.from_pyfile(join(environ['OPENSHIFT_REPO_DIR'],'mongo.cfg'))
+
+#mongodb defaults
+app.config['MONGO_HOST'] = getenv("OPENSHIFT_MONGODB_DB_HOST",None)
+app.config['MONGO_PORT'] = getenv("OPENSHIFT_MONGODB_DB_PORT",None)
+app.config['MONGO_USERNAME'] = getenv("OPENSHIFT_MONGODB_DB_USERNAME",None)
+app.config['MONGO_PASSWORD'] = getenv("OPENSHIFT_MONGODB_DB_PASSWORD",None)
+
 app.config.from_pyfile(join(environ['OPENSHIFT_DATA_DIR'],'cadinet.cfg'))
 
 mongo = PyMongo(app)
