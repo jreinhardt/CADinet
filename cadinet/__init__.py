@@ -24,7 +24,7 @@ from werkzeug import secure_filename
 from urlparse import urljoin
 
 import json
-from jsonschema import validate, ValidationError, SchemaError
+import jsonschema
 
 from os import environ, mkdir, makedirs
 from os.path import exists,join
@@ -51,6 +51,7 @@ LICENSES = {
     "GPL 3.0+" : "http://www.gnu.org/licenses/gpl-3.0",
 }
 
+
 app = Flask(__name__)
 app.config['ENABLE_REGISTRATION'] = True
 app.config.from_pyfile(join(environ['OPENSHIFT_REPO_DIR'],'mongo.cfg'))
@@ -62,6 +63,22 @@ oid_path = join(environ['OPENSHIFT_DATA_DIR'],'openid')
 if not exists(oid_path):
     mkdir(oid_path)
 oid = OpenID(app, oid_path,safe_roots=[])
+
+spec_dir = join(app.root_path,'specs')
+def validate(instance,filename):
+    if not instance:
+        return jsonify(status="fail",message="There was a problem with the request"),400
+    try:
+        schema = json.loads(open(join(spec_dir,filename)).read())
+        jsonschema.validate(instance,schema)
+    except jsonschema.SchemaError as e:
+        app.logger.error("SchemaError: " + e.message)
+        return jsonify(status="fail",message="Invalid schema. This is not your fault, please report a bug"), 400
+    except jsonschema.ValidationError as e:
+        app.logger.error("ValidationError: " + e.message)
+        return jsonify(status="fail",message=e.message), 400
+    else:
+        return None
 
 log_handler = RotatingFileHandler(join(environ['OPENSHIFT_LOG_DIR'],'cadinet.log'),maxBytes=2**20,backupCount=3)
 log_handler.setLevel(logging.INFO)
@@ -147,15 +164,6 @@ def upload_fcstd(id):
         abort(404)
 
     req = request.get_json()
-    try:
-        schema = json.loads(open(join(environ["OPENSHIFT_REPO_DIR"],'specs','fcstd.json')).read())
-        validate(req,schema)
-    except SchemaError as e:
-        app.logger.error("SchemaError: " + e.message)
-        return jsonify(status="fail",message="Invalid schema. This is not your fault, please report a bug"), 400
-    except ValidationError as e:
-        app.logger.error("ValidationError: " + e.message)
-        return jsonify(status="fail",message=e.message), 400
 
     res = {}
     file = request.files['file']
@@ -185,18 +193,9 @@ def upload_3djs(id):
     if thing is None:
         return jsonify(status="fail",message="No thing with ID %s found" % id),404
     req = request.get_json()
-    if not req:
-        return jsonify(status="fail",message="There was a problem with the request"),400
 
-    try:
-        schema = json.loads(open(join(environ["OPENSHIFT_REPO_DIR"],'specs','threed.json')).read())
-        validate(req,schema)
-    except SchemaError as e:
-        app.logger.error("SchemaError: " + e.message)
-        return jsonify(status="fail",message="Invalid schema. This is not your fault, please report a bug"), 400
-    except ValidationError as e:
-        app.logger.error("ValidationError: " + e.message)
-        return jsonify(status="fail",message=e.message), 400
+    if not validate(req,'threed.json') is None:
+        return validate(req,'threed.json')
 
     users = mongo.db.users
     user = users.find_one({"token" : req["token"]})
@@ -233,18 +232,9 @@ def is_valid_uuid(uid):
 @app.route('/thing',methods=['POST'])
 def add_thing():
     req = request.get_json()
-    if not req:
-        return jsonify(status="fail", message="Failed to decode request"),400
 
-    try:
-        schema = json.loads(open(join(environ["OPENSHIFT_REPO_DIR"],'specs','thing.json')).read())
-        validate(req,schema)
-    except SchemaError as e:
-        app.logger.error("SchemaError: " + e.message)
-        return jsonify(status="fail",message="Invalid schema. This is not your fault, please report a bug"), 400
-    except ValidationError as e:
-        app.logger.error("ValidationError: " + e.message)
-        return jsonify(status="fail",message=e.message), 400
+    if not validate(req,'thing.json') is None:
+        return validate(req,'thing.json')
 
     users = mongo.db.users
     user = users.find_one({"token" : req["token"]})
