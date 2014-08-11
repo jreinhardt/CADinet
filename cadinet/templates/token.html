@@ -1,14 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-	{% if action == 'created' %}
-	<h1>Secret Token created</h1>
-	<label>Put this token into your config to make sure only you can upload stuff</label>
-	{% elif action == 'updated' %}
-	<h1>Secret Token updated</h1>
-	<label>Previously obtained tokens are invalidated. Put this token into your config to make sure only you can upload stuff</label>
-	{% endif %}
+	<h1>Account created</h1>
+	<label>With this username and password you can identify yourself to the cadinet. If you loose this data, your account can not be recovered.</label>
 	<div class="inner-content">
-		<p>{{ token }}</p>
+		<table class="table">
+			<tr><th>username</th><td>{{ username }}</td></tr>
+			<tr><th>password</th><td>{{ password }}</td></tr>
+		</table>
 	</div>
 {% endblock %}

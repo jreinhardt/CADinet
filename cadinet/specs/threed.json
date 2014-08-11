@@ -3,9 +3,6 @@
    "title" : "3D data upload",
    "type":"object",
    "properties" : {
-      "token" : {
-         "type" : "string"
-      },
       "vertices" : {
          "type" : "array",
          "items" : {
@@ -36,5 +33,5 @@
       }
    },
    "additionalProperties" : false,
-   "required" : ["vertices","facets","camera","token"]
+   "required" : ["vertices","facets","camera"]
 }

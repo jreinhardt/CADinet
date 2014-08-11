@@ -13,13 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import Flask, render_template, request, flash, redirect, url_for, g, abort, jsonify, send_file
+from flask import Flask, render_template, request, flash, redirect, url_for, g, abort, jsonify, send_file, current_app, Response
 from flask.ext.pymongo import PyMongo
-from flask.ext.openid import OpenID
 from flask_wtf import Form
 from wtforms import TextField
-from wtforms.validators import DataRequired, URL
+from wtforms.validators import DataRequired, URL, Email, Regexp
 from werkzeug import secure_filename
+from functools import wraps
 
 from urlparse import urljoin
 
@@ -35,6 +35,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 import random
 import re
+
+from hashlib import sha1
 
 LICENSES = {
     "CC0 1.0" : "http://creativecommons.org/publicdomain/zero/1.0/",
@@ -54,6 +56,7 @@ LICENSES = {
 
 app = Flask(__name__)
 app.config['ENABLE_REGISTRATION'] = True
+app.config['SSL'] = True
 
 #mongodb defaults
 app.config['MONGO_HOST'] = getenv("OPENSHIFT_MONGODB_DB_HOST",None)
@@ -64,11 +67,6 @@ app.config['MONGO_PASSWORD'] = getenv("OPENSHIFT_MONGODB_DB_PASSWORD",None)
 app.config.from_pyfile(join(environ['OPENSHIFT_DATA_DIR'],'cadinet.cfg'))
 
 mongo = PyMongo(app)
-
-oid_path = join(environ['OPENSHIFT_DATA_DIR'],'openid')
-if not exists(oid_path):
-    mkdir(oid_path)
-oid = OpenID(app, oid_path,safe_roots=[])
 
 spec_dir = join(app.root_path,'specs')
 def validate(instance,filename):
@@ -96,8 +94,52 @@ log_handler.setFormatter(logging.Formatter(
 app.logger.addHandler(log_handler)
 logging.getLogger().addHandler(log_handler)
 
-class OpenIDForm(Form):
-    url = TextField("url",validators=[DataRequired(),URL(require_tld=True)])
+uuid_re = re.compile('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+def is_valid_uuid(uid):
+    return not uuid_re.match(uid) is None
+
+def ssl_required(fn):
+    @wraps(fn)
+    def decorated_view(*args, **kwargs):
+        if current_app.config.get("SSL"):
+            if request.is_secure:
+                return fn(*args, **kwargs)
+            else:
+                return redirect(request.url.replace("http://", "https://"))
+        return fn(*args, **kwargs)
+    return decorated_view
+
+def check_auth(username, password):
+    """This function is called to check if a username /
+    password combination is valid.
+    """
+    user = mongo.db.users.find_one({'_id' : username})
+    if user is None:
+        return False
+
+    return sha1(password).hexdigest() == user['password_hash']
+
+def authenticate():
+    """Sends a 401 response that enables basic auth"""
+    return Response(
+    'Could not verify your access level for that URL.\n'
+    'You have to login with proper credentials', 401,
+    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+def auth_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
+
+class CredentialsForm(Form):
+    username = TextField("username",validators=[DataRequired(),Regexp('[a-zA-Z0-9_-]{6,30}',
+        message="Username must only contain alphanumerical characters and _-")]
+    )
+    email = TextField("email",validators=[DataRequired()])
 
 class SubmissionForm(Form):
     url = TextField("url",validators=[DataRequired(),URL(require_tld=True)])
@@ -115,36 +157,29 @@ def about():
     return render_template('about.html',licenses = LICENSES.items())
 
 @app.route('/register',methods=['GET','POST'])
-@oid.loginhandler
+@ssl_required
 def register():
-    if not config['ENABLE_REGISTRATION']:
+    if not app.config['ENABLE_REGISTRATION']:
         abort(404)
-    form = OpenIDForm()
+    form = CredentialsForm()
     if form.validate_on_submit():
-        openid = form.url.data
-        return oid.try_login(openid, ask_for=['email', 'nickname'])
-    return render_template('register.html', form = form,next=oid.get_next_url(),
-                           error=oid.fetch_error())
-
-@oid.after_login
-def provide_token(resp):
-    user = {
-        '_id' : resp.identity_url,
-        'email' : resp.email,
-        'name' : resp.nickname,
-        'token' : "%x" % random.SystemRandom().getrandbits(64)
-    }
-    if (not user['email'] is None) and (not user['name'] is None):
         users = mongo.db.users
-        #check if user is already registered
-        if users.find_one({"_id" : user['_id']}) is None:
-            users.insert(user)
-            return render_template('token.html',token = user['token'],action="created")
-        else:
-            users.update({"_id" : user['_id']},user)
-            return render_template('token.html',token = user['token'],action="updated")
-    else:
-        redirect(url_for('register'))
+        if not users.find_one({'_id' : form.username.data}) is None:
+            flash('Username already exists, please choose a different one')
+            return render_template('register.html',form = form)
+
+        password = "%x" % random.SystemRandom().getrandbits(64)
+
+        user = {
+            '_id' : form.username.data,
+            'email' : form.email.data,
+            #for a random password no salt is necessary
+            'password_hash' : sha1(password).hexdigest()
+        }
+        users.insert(user)
+        return render_template('token.html',username = form.username.data, password=password)
+
+    return render_template('register.html', form = form)
 
 @app.route('/thing/<id>')
 def show_thing(id):
@@ -164,12 +199,14 @@ def allowed_file(exts,filename):
            filename.rsplit('.', 1)[1].lower() in exts
 
 @app.route('/upload/fcstd/<id>',methods=['POST'])
+@ssl_required
+@auth_required
 def upload_fcstd(id):
     thing = mongo.db.things.find_one({"_id" : id})
     if thing is None:
-        abort(404)
-
-    req = request.get_json()
+        return jsonify(status="fail",message="No thing with ID %s found" % id),404
+    elif request.authorization.username != thing["author"]:
+        return jsonify(status="fail",message="You are not allowed to update this thing"),403
 
     res = {}
     file = request.files['file']
@@ -197,19 +234,16 @@ def download_fcstd(id):
             attachment_filename=os.path.basename(thing['fcstd_file']))
 
 @app.route('/upload/3djs/<id>',methods=['POST'])
+@ssl_required
+@auth_required
 def upload_3djs(id):
     thing = mongo.db.things.find_one({"_id" : id})
     if thing is None:
         return jsonify(status="fail",message="No thing with ID %s found" % id),404
+    elif request.authorization.username != thing["author"]:
+        return jsonify(status="fail",message="You are not allowed to update this thing"),403
+
     req = request.get_json()
-
-    if not validate(req,'threed.json') is None:
-        return validate(req,'threed.json')
-
-    users = mongo.db.users
-    user = users.find_one({"token" : req["token"]})
-    if user is None:
-        return jsonify(status="fail",message="Authentication failed"),403
 
     threed_dir = join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3djs')
     if not exists(threed_dir):
@@ -236,16 +270,13 @@ def download_3djs(id):
 
 
 @app.route('/thing',methods=['POST'])
+@ssl_required
+@auth_required
 def add_thing():
     req = request.get_json()
 
-    if not validate(req,'thing.json') is None:
-        return validate(req,'thing.json')
-
     users = mongo.db.users
-    user = users.find_one({"token" : req["token"]})
-    if user is None:
-        return jsonify(status="fail", message="Authentication failed"),403
+    user = users.find_one({"_id" : request.authorization.username})
 
     thing = {}
 
@@ -257,7 +288,7 @@ def add_thing():
     #sanitize thing TODO bleach
     for key in ['title','description','license','license_url']:
         thing[key] = req["thing"][key]
-    thing['author'] = user['name']
+    thing['author'] = user['_id']
 
     if not thing['license'] in LICENSES or LICENSES[thing['license']] != thing['license_url']:
         return jsonify(status="fail",message="License not allowed or unknown license url, see %s for more information" % url_for('about'))
@@ -273,11 +304,11 @@ def add_thing():
         resp["status"] = "created"
     else:
         #make sure only owner can overwrite things
-        if thing_ex["author"] != user["name"]:
-            return jsonify(status="fail", message="Authentication failed"),403
+        if request.authorization.username != thing_ex["author"]:
+            return jsonify(status="fail",message="You are not allowed to update this thing"),403
 
         things.update({'_id' : thing['_id']},thing)
-        resp["status"] = "created"
+        resp["status"] = "updated"
 
     return jsonify(**resp)
 

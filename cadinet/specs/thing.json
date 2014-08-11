@@ -3,7 +3,6 @@
    "title" : "Thing data upload",
    "type":"object",
    "properties" : {
-      "token" : {"type" : "string"},
       "thing" : {
          "type" : "object",
          "properties" : {
@@ -18,6 +17,6 @@
       }
    },
    "additionalProperties" : false,
-   "required" : ["token", "thing"]
+   "required" : ["thing"]
 }
 

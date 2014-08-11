@@ -1,12 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-	<h1>Request Token</h1>
-	<label>Obtain a secret token by logging in with your OpenID</label>
+	<h1>Register to this Cadinet</h1>
+	<label>You will be assigned a random password. Don't loose it, or your account will be lost</label>
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
+		<ul class=flashes>
+		{% for message in messages %}
+			<li>{{ message }}</li>
+		{% endfor %}
+		</ul>
+		{% endif %}
+	{% endwith %}
 	<div class="form-group has-error">
 		<form method="POST" action="{{ url_for('register') }}">
 			{{ form.csrf_token }}
-			{{ form.url(size=20) }}
+			{{ form.username.label }}{{ form.username(size=30) }}
+			{{ form.email.label }}{{ form.email(size=30) }}
 			<input type="submit" class="btn btn-primary" value="Go">
 		</form>
 	</div>
