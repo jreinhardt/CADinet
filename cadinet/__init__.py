@@ -191,7 +191,10 @@ def download_fcstd(id):
     thing = mongo.db.things.find_one({"_id" : id})
     if thing is None or not 'fcstd_file' in thing:
         abort(404)
-    return send_file(join(environ['OPENSHIFT_DATA_DIR'],'things',id,'fcstd',thing['fcstd_file']),mimetype='application/x-extension-fcstd',as_attachment=True,attachment_filename=os.path.basename(thing['fcstd_file']))
+    return send_file(join(environ['OPENSHIFT_DATA_DIR'],'things',id,'fcstd',thing['fcstd_file']),
+            mimetype='application/x-extension-fcstd',
+            as_attachment=True,
+            attachment_filename=os.path.basename(thing['fcstd_file']))
 
 @app.route('/upload/3djs/<id>',methods=['POST'])
 def upload_3djs(id):
@@ -228,12 +231,9 @@ def download_3djs(id):
     thing = mongo.db.things.find_one({"_id" : id})
     if thing is None or not '3djs_file' in thing:
         abort(404)
-    return send_file(join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3djs',thing['3djs_file']),mimetype='text/javascript')
+    return send_file(join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3djs',thing['3djs_file']),
+            mimetype='text/javascript')
 
-
-uuid_re = re.compile('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
-def is_valid_uuid(uid):
-    return not uuid_re.match(uid) is None
 
 @app.route('/thing',methods=['POST'])
 def add_thing():
