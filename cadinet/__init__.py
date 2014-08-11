@@ -25,6 +25,7 @@ from urlparse import urljoin
 
 import json
 import jsonschema
+import cPickle
 
 from os import environ, mkdir, makedirs, getenv
 from os.path import exists,join
@@ -233,10 +234,10 @@ def download_fcstd(id):
             as_attachment=True,
             attachment_filename=os.path.basename(thing['fcstd_file']))
 
-@app.route('/upload/3djs/<id>',methods=['POST'])
+@app.route('/upload/3dview/<id>',methods=['POST'])
 @ssl_required
 @auth_required
-def upload_3djs(id):
+def upload_3dview(id):
     thing = mongo.db.things.find_one({"_id" : id})
     if thing is None:
         return jsonify(status="fail",message="No thing with ID %s found" % id),404
@@ -245,14 +246,17 @@ def upload_3djs(id):
 
     req = request.get_json()
 
-    threed_dir = join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3djs')
+
+    threed_dir = join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3dview')
     if not exists(threed_dir):
         makedirs(threed_dir)
-    filename = os.path.join(threed_dir,'threed.js')
-    with open(filename,'w') as fid:
-        fid.write(render_template('three.js',cam=req["camera"],vertices=req["vertices"],facets=req["facets"]))
+    filename = os.path.join(threed_dir,'threed.dat')
 
-    thing["3djs_file"] = 'threed.js'
+    with open(filename,'w') as fid:
+        pick = cPickle.Pickler(fid)
+        pick.dump(req)
+
+    thing["3d_dat"] = 'threed.dat'
     mongo.db.things.update({'_id' : id},thing)
 
     for t in mongo.db.thing.find({'_id' : id}):
@@ -263,11 +267,14 @@ def upload_3djs(id):
 @app.route('/3djs/<id>')
 def download_3djs(id):
     thing = mongo.db.things.find_one({"_id" : id})
-    if thing is None or not '3djs_file' in thing:
+    if thing is None or not '3d_dat' in thing:
         abort(404)
-    return send_file(join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3djs',thing['3djs_file']),
-            mimetype='text/javascript')
 
+    with open(join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3dview',thing['3d_dat'])) as fid:
+        upick = cPickle.Unpickler(fid)
+        req = upick.load()
+
+    return render_template('three.js',cam=req["camera"],vertices=req["vertices"],facets=req["facets"])
 
 @app.route('/thing',methods=['POST'])
 @ssl_required
@@ -295,7 +302,7 @@ def add_thing():
 
     resp = {}
     resp['fcstd_url'] = urljoin(request.url,url_for('upload_fcstd',id=req['thing']['id']))
-    resp['3djs_url'] = urljoin(request.url,url_for('upload_3djs',id=req['thing']['id']))
+    resp['3dview_url'] = urljoin(request.url,url_for('upload_3dview',id=req['thing']['id']))
 
     things = mongo.db.things
     thing_ex = things.find_one({'_id' : thing['_id']})

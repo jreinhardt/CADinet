@@ -1,7 +1,7 @@
 var camera, controls, scene, renderer;
 function attach_renderer(target) {
 
-	var SCREEN_WIDTH = 600, SCREEN_HEIGHT = 400;
+	var SCREEN_WIDTH = 750, SCREEN_HEIGHT = 400;
 	var VIEW_ANGLE = 35, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
 
 	renderer = new THREE.WebGLRenderer();
@@ -37,13 +37,19 @@ function attach_renderer(target) {
 	geom.faces.push(new THREE.Face3({{ f[0] }},{{ f[1] }},{{ f[2] }}));
 	{%- endfor %}
 
-	var basematerial = new THREE.MeshBasicMaterial( { color: 0x888888 } );
+	geom.computeFaceNormals();
+
+	var basematerial = new THREE.MeshPhongMaterial( { color: 0x888888 } );
 	var mesh = new THREE.Mesh( geom, basematerial );
 	scene.add( mesh );
 
-	var light = new THREE.PointLight( 0xFFFF00 );
-	light.position.set( -10000, -10000, 10000 );
-	scene.add( light );
+	var d1 = new THREE.DirectionalLight(0xffffff);
+	d1.position.set(1,1,1).normalize();
+	scene.add(d1);
+	var d2 = new THREE.DirectionalLight(0xffffff);
+	d2.position.set(-1,-1,-1).normalize();
+	scene.add(d2);
+
 	renderer.render( scene, camera );
 	animate();
 };

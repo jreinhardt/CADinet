@@ -2,10 +2,11 @@
 <html>
 	<head>
 		<title>CADinet</title>
-		<link href="/static/bootstrap.min.css" rel="stylesheet">
+		<link href="{{ url_for('static',filename='bootstrap.min.css') }}" rel="stylesheet">
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-		<script src="/static/jquery-2.1.1.min.js"></script>
-		<script src="/static/bootstrap.min.js"></script>
+		<script src="{{ url_for('static',filename='jquery-2.1.1.min.js') }}"></script>
+		<script src="{{ url_for('static',filename='bootstrap.min.js') }}"></script>
+		<script src="{{ url_for('static',filename='three.min.js') }}"></script>
 		{% block tracking %}
 		{% if config.PIWIK_URL is defined and config.PIWIK_ID is defined %}
 			<script type="text/javascript">
