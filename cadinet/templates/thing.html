@@ -11,7 +11,7 @@
 				{% if not thing['3d_dat'] is undefined %}
 				<h2>3D View</h2>
 				<div id="threedview" style="border: 1px solid black"></div>
-				<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r50/three.min.js"></script>
+				<script src="{{ url_for('static',filename='three.min.js') }}"></script>
 				<script type="text/javascript" src="{{ url_for('download_3djs',id=thing._id) }}"></script>
 				<script type="text/javascript"> window.onload = function() {
 					attach_renderer(document.getElementById("threedview"));
