@@ -7,8 +7,11 @@ MarkupSafe==0.23
 WTForms==2.0.1
 Werkzeug==0.9.6
 argparse==1.2.1
+bleach==1.4
+html5lib==0.999
 itsdangerous==0.24
 jsonschema==2.3.0
 pymongo==2.7.2
 python-openid==2.2.5
+six==1.7.3
 wsgiref==0.1.2

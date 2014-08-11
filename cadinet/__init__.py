@@ -39,6 +39,8 @@ import re
 
 from hashlib import sha1
 
+import bleach
+
 LICENSES = {
     "CC0 1.0" : "http://creativecommons.org/publicdomain/zero/1.0/",
     "CC-BY 3.0" : "http://creativecommons.org/licenses/by/3.0/",
@@ -292,9 +294,9 @@ def add_thing():
     else:
         return jsonify(status="fail",message="Invalid thing id"),400
 
-    #sanitize thing TODO bleach
+    #sanitize thing
     for key in ['title','description','license','license_url']:
-        thing[key] = req["thing"][key]
+        thing[key] = bleach.clean(req["thing"][key],strip=True)
     thing['author'] = user['_id']
 
     if not thing['license'] in LICENSES or LICENSES[thing['license']] != thing['license_url']:
