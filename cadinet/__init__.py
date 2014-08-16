@@ -198,9 +198,6 @@ def show_thing(id):
 @app.route('/things')
 def list_things():
     things = mongo.db.things
-    for thing in things.find():
-        print thing
-
     return render_template('things.html',things = things.find())
 
 def allowed_file(exts,filename):
@@ -339,6 +336,27 @@ def tracker():
             "description" : t["description"]
         })
     return render_template("tracker.json",things=things)
+
+@app.route('/users')
+def list_users():
+    users = mongo.db.users
+    return render_template('users.html',users = users.find())
+
+@app.route('/user/<id>')
+def user(id):
+    user = mongo.db.users.find_one({'_id' : id})
+    if user is None:
+        abort(404)
+    things = []
+    for t in mongo.db.things.find({'author' : user["_id"]}):
+        things.append({
+            "id" : t["_id"],
+            "url" : urljoin(request.url,url_for('show_thing',id=t["_id"])),
+            "title" : t["title"],
+            "authors" : [{"name" : t["author"]}],
+            "description" : t["description"]
+        })
+    return render_template('user.html',user = user,things = things)
 
 @app.route('/tracker/<user>')
 def tracker_user(user):

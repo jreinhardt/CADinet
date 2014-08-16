@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<h1>Users</h1>
+	<label>Users registered on this cadinet</label>
+	<table class="table table-striped table-bordered">
+		<tbody>
+		{% for user in users %}
+		<tr><th><a href="{{ url_for('user',id=user._id) }}">{{ user._id }}</a></th>
+		<td><a href="{{ url_for('tracker_user',user=user._id) }}">Tracker</a></td></tr>
+		{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}
+
