@@ -44,6 +44,12 @@ import bleach
 LICENSES = {
     "CC0 1.0" : "http://creativecommons.org/publicdomain/zero/1.0/",
     "CC-BY 3.0" : "http://creativecommons.org/licenses/by/3.0/",
+    "CC-BY 4.0" : "http://creativecommons.org/licenses/by/4.0/",
+    "CC-BY-SA 4.0" : "http://creativecommons.org/licenses/by-sa/4.0/",
+    "CC-BY-ND 4.0" : "http://creativecommons.org/licenses/by-nd/4.0/",
+    "CC-BY-NC 4.0" : "http://creativecommons.org/licenses/by-nc/4.0/",
+    "CC-BY-NC-SA 4.0" : "http://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "CC-BY-NC-ND 4.0" : "http://creativecommons.org/licenses/by-nc-nd/4.0/",
     "MIT" : "http://opensource.org/licenses/MIT", #see https://fedoraproject.org/wiki/Licensing:MIT?rd=Licensing/MIT
     "BSD 3-clause" : "http://opensource.org/licenses/BSD-3-Clause",
     "Apache 2.0" : "http://www.apache.org/licenses/LICENSE-2.0",
