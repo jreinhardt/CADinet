@@ -8,7 +8,7 @@
 			<div class="col-md-8 col-xs-12">
 				<h1>{{ thing.title }}</h1>
 
-				{% if not thing['3d_dat'] is undefined %}
+				{% if not thing['3d_dat'] is undefined and session.webgl %}
 				<h2>3D View</h2>
 				<div id="threedview" style="border: 1px solid black"></div>
 				<script src="{{ url_for('static',filename='three.min.js') }}"></script>
@@ -18,6 +18,9 @@
 					attach_renderer(document.getElementById("threedview"));
 				}
 				</script>
+				<a href="{{ url_for('settings',next=request.url,webgl=False) }}">disable WebGL viewer</a>
+				{% else %}
+				<a href="{{ url_for('settings',next=request.url,webgl=True) }}">enable WebGL viewer</a>
 				{% endif %}
 
 				<h2>Description</h2>

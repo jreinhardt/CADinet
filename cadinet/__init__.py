@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import Flask, render_template, request, flash, redirect, url_for, g, abort, jsonify, send_file, current_app, Response
+from flask import Flask, render_template, request, flash, redirect, url_for, g, abort, jsonify, send_file, current_app, Response, session
 from flask.ext.pymongo import PyMongo
 from flask_wtf import Form
 from wtforms import TextField
@@ -370,6 +370,17 @@ def tracker_user(user):
             "description" : t["description"]
         })
     return render_template("tracker.json",things=things)
+
+@app.route('/settings')
+def settings():
+    session.permanent = True
+    if 'webgl' in request.args:
+        session["webgl"] = request.args['webgl'].lower() == 'true'
+        session.modified = True
+    if 'next' in request.args:
+        return redirect(request.args['next'])
+    else:
+        abort(404)
 
 if __name__ == '__main__':
 
