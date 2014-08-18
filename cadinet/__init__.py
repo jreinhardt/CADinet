@@ -251,6 +251,8 @@ def upload_3dview(id):
 
     req = request.get_json()
 
+    if not validate(req,'threed.json') is None:
+        return validate(req,'threed.json')
 
     threed_dir = join(environ['OPENSHIFT_DATA_DIR'],'things',id,'3dview')
     if not exists(threed_dir):
@@ -286,6 +288,9 @@ def download_3djs(id):
 @auth_required
 def add_thing():
     req = request.get_json()
+
+    if not validate(req,'thing.json') is None:
+        return validate(req,'thing.json')
 
     users = mongo.db.users
     user = users.find_one({"_id" : request.authorization.username})
