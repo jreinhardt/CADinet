@@ -80,16 +80,16 @@ mongo = PyMongo(app)
 spec_dir = join(app.root_path,'specs')
 def validate(instance,filename):
     if not instance:
-        return jsonify(status="fail",message="There was a problem with the request"),400
+        return jsonify(reason="There was a problem with the request"),400
     try:
         schema = json.loads(open(join(spec_dir,filename)).read())
         jsonschema.validate(instance,schema)
     except jsonschema.SchemaError as e:
         app.logger.error("SchemaError: " + e.message)
-        return jsonify(status="fail",message="Invalid schema. This is not your fault, please report a bug"), 400
+        return jsonify(reason="Invalid schema. This is not your fault, please report a bug"), 400
     except jsonschema.ValidationError as e:
         app.logger.error("ValidationError: " + e.message)
-        return jsonify(status="fail",message=e.message), 400
+        return jsonify(reason=e.message), 400
     else:
         return None
 
@@ -169,7 +169,7 @@ def about():
 @ssl_required
 def register():
     if not app.config['ENABLE_REGISTRATION']:
-        abort(404)
+        jsonify(message='Registration is disabled on this cadinet'),404
     form = CredentialsForm()
     if form.validate_on_submit():
         users = mongo.db.users
@@ -210,12 +210,14 @@ def allowed_file(exts,filename):
 def upload_fcstd(id):
     thing = mongo.db.things.find_one({"_id" : id})
     if thing is None:
-        return jsonify(status="fail",message="No thing with ID %s found" % id),404
+        abort(404)
     elif request.authorization.username != thing["author"]:
-        return jsonify(status="fail",message="You are not allowed to update this thing"),403
+        return jsonify(reason="You are not allowed to update this thing"),403
 
     res = {}
     file = request.files['file']
+    if not file:
+        return jsonify(reason="Invalid file"),403
     if file and allowed_file('fcstd',file.filename):
         filename = secure_filename(file.filename)
         thing_dir = join(environ['OPENSHIFT_DATA_DIR'],'things',id,'fcstd')
@@ -224,10 +226,9 @@ def upload_fcstd(id):
         file.save(os.path.join(thing_dir, filename))
         thing['fcstd_file'] = filename
         mongo.db.things.update({'_id' : id},thing)
-        res["status"] = 'success'
+        return jsonify(fcstd_url=urljoin(request.url,url_for('download_fcstd',id=id)))
     else:
-        res["status"] = 'failed'
-    return jsonify(**res)
+        return jsonify(reason='Forbidden file type'),403
 
 @app.route('/download/fcstd/<id>')
 def download_fcstd(id):
@@ -245,9 +246,9 @@ def download_fcstd(id):
 def upload_3dview(id):
     thing = mongo.db.things.find_one({"_id" : id})
     if thing is None:
-        return jsonify(status="fail",message="No thing with ID %s found" % id),404
+        abort(404)
     elif request.authorization.username != thing["author"]:
-        return jsonify(status="fail",message="You are not allowed to update this thing"),403
+        return jsonify(reason="You are not allowed to update this thing"),403
 
     req = request.get_json()
 
@@ -266,10 +267,7 @@ def upload_3dview(id):
     thing["3d_dat"] = 'threed.dat'
     mongo.db.things.update({'_id' : id},thing)
 
-    for t in mongo.db.thing.find({'_id' : id}):
-        print t
-
-    return jsonify(status='success')
+    return jsonify(threed_js_url=url_for('download_3djs',id=id))
 
 @app.route('/3djs/<id>')
 def download_3djs(id):
@@ -300,15 +298,17 @@ def add_thing():
     if is_valid_uuid(req['thing']['id']):
         thing['_id'] = req["thing"]["id"]
     else:
-        return jsonify(status="fail",message="Invalid thing id"),400
+        return jsonify(reason="Invalid thing id"),400
 
     #sanitize thing
     for key in ['title','description','license','license_url']:
         thing[key] = bleach.clean(req["thing"][key],strip=True)
     thing['author'] = user['_id']
 
-    if not thing['license'] in LICENSES or LICENSES[thing['license']] != thing['license_url']:
-        return jsonify(status="fail",message="License not allowed or unknown license url, see %s for more information" % url_for('about'))
+    if not thing['license'] in LICENSES:
+        return jsonify(reason="License not allowed, see %s for more information" % url_for('about'))
+    if LICENSES[thing['license']] != thing['license_url']:
+        return jsonify(reason="Unknown license url, see %s for more information" % url_for('about'))
 
     resp = {}
     resp['fcstd_url'] = urljoin(request.url,url_for('upload_fcstd',id=req['thing']['id']))
@@ -322,7 +322,7 @@ def add_thing():
     else:
         #make sure only owner can overwrite things
         if request.authorization.username != thing_ex["author"]:
-            return jsonify(status="fail",message="You are not allowed to update this thing"),403
+            return jsonify(reason="You are not allowed to update this thing"),403
 
         things.update({'_id' : thing['_id']},thing)
         resp["status"] = "updated"
