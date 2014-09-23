@@ -13,6 +13,14 @@ things, and CAD.
 
 It is licensed under the [AGPL3](http://www.gnu.org/licenses/agpl.html).
 
+CADinet is not primarily intended to be used purely in the browser, but
+integrated into CAD tools via its REST API. At the moment there is a
+experimental [plugin](https://github.com/jreinhardt/CADinet-freecad) for
+[FreeCAD](http://freecadweb.org/).
+
+Get started
+===========
+
 Register for OpenShift
 ----------------------
 
